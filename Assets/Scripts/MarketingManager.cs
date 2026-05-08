@@ -14,7 +14,7 @@ public class MarketingManager : MonoBehaviour
     [Header("Marketing")]
     [SerializeField] private float _p                  = 1.5f; // exposant
     [SerializeField] private float _c                  = 0.5f; // coefficient
-    [SerializeField] private float _b                  = 15f;  // base
+    [SerializeField] private float _b                  = 400f;  // base
     [SerializeField] private float _demandBonusPerLevel = 5f;  // +5% demande par niveau
     public  int MarketingLevel { get; private set; } = 0;
 

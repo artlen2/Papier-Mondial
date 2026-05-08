@@ -58,7 +58,7 @@ public class ProductionManager : MonoBehaviour
     }
 
     // ── Bouton : Faire du papier (manuel) ────
-    // 1 cm bois → 1 feuille
+    // 1 cm bois -> 1 feuille
     public void OnClickProducePaper()
     {
         if (GameManager.Instance.TotalWood <= 0)
@@ -149,6 +149,7 @@ public class ProductionManager : MonoBehaviour
         int next = ManufactureLevel + 1;
         return _manufactureC * Mathf.Pow(next, _manufactureP) * 10f + _manufactureB;
     }
+
 
     // ── UI ───────────────────────────────────
 
