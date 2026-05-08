@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     // ── Ressources partagées ──────────────────
+    public int TotalPaperOveral { get; private set; } = 0;
     public int   TotalPaper       { get; private set; } = 0;
     public int   TotalWood        { get; private set; } = 0;
     public float Money            { get; private set; } = 50f;
@@ -32,6 +33,7 @@ public class GameManager : MonoBehaviour
 
     // ── UI ───────────────────────────────────
     [Header("UI — Ressources")]
+    [SerializeField] private TMP_Text _txtTotalPaper;
     [SerializeField] private TMP_Text _txtPaper;
     [SerializeField] private TMP_Text _txtWood;
     [SerializeField] private TMP_Text _txtMoney;
@@ -65,21 +67,21 @@ public class GameManager : MonoBehaviour
 
     // ── Méthodes de modification des ressources ──
 
-    public void AddPaper(int amount)   { TotalPaper = Mathf.Max(0, TotalPaper + amount); }
+    public void AddPaper(int amount)   { TotalPaper = Mathf.Max(0, TotalPaper + amount, TotalPaperOveral + amount); }
     public void RemovePaper(int amount){ TotalPaper = Mathf.Max(0, TotalPaper - amount); }
 
     public void AddWood(int amount)
     {
         int actual = Mathf.Min(amount, ForestRemaining);
         if (actual <= 0) return;
-        TotalWood          += actual;
+        TotalWood += actual;
         WoodHarvestedTotal += actual;
     }
     public void RemoveWood(int amount) { TotalWood = Mathf.Max(0, TotalWood - amount); }
 
     public void AddMoney(float amount)
     {
-        Money            += amount;
+        Money += amount;
         TotalMoneyEarned += amount;
     }
 
@@ -142,9 +144,10 @@ public class GameManager : MonoBehaviour
 
     private void UpdateUI()
     {
+        if (_txtTotalPaper) _txtTotalPaper.text           = "Papier Total : "  + TotalPaperOveral;
         if (_txtPaper)           _txtPaper.text           = "Papier : "  + TotalPaper + " feuilles";
         if (_txtWood)            _txtWood.text            = "Bois : "    + TotalWood  + " cm";
         if (_txtMoney)           _txtMoney.text           = "Argent : "  + Money.ToString("F2") + "$";
-        if (_txtForestRemaining) _txtForestRemaining.text = "Forêt : "   + ForestRemaining + " / " + _totalForestWood + " cm";
+        if (_txtForestRemaining) _txtForestRemaining.text = "Forêt : "   + ForestRemaining + " / " + _totalForestWood;
     }
 }
