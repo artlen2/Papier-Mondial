@@ -13,10 +13,10 @@ public class MarketManager : MonoBehaviour
 
     // ── Prix ──────────────────────────────────
     [Header("Prix de vente")]
-    [SerializeField] private float _sellPrice = 1.5f;
-    [SerializeField] private float _minPrice  = 0.1f;
+    [SerializeField] private float _sellPrice = 0.2f;
+    [SerializeField] private float _minPrice  = 0.01f;
     [SerializeField] private float _maxPrice  = 10f;
-    [SerializeField] private float _priceStep = 0.1f;
+    [SerializeField] private float _priceStep = 0.05f; 
     public float SellPrice => _sellPrice;
 
     // ── Vente auto ────────────────────────────

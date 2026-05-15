@@ -12,9 +12,9 @@ public class MarketingManager : MonoBehaviour
 
     // ── Marketing ─────────────────────────────
     [Header("Marketing")]
-    [SerializeField] private float _p                  = 1.5f; // exposant
-    [SerializeField] private float _c                  = 0.5f; // coefficient
-    [SerializeField] private float _b                  = 400f;  // base
+    [SerializeField] private float _p = 1.5f; // exposant
+    [SerializeField] private float _c = 0.5f; // coefficient
+    [SerializeField] private float _b = 400f;  // base
     [SerializeField] private float _demandBonusPerLevel = 5f;  // +5% demande par niveau
     public  int MarketingLevel { get; private set; } = 0;
 
@@ -41,8 +41,8 @@ public class MarketingManager : MonoBehaviour
     // ── Bouton : Améliorer le marketing ──────
     public void OnClickUpgradeMarketing()
     {
-        int   nextLevel = MarketingLevel + 1;
-        float cost      = GetUpgradeCost(nextLevel);
+        int nextLevel = MarketingLevel + 1;
+        float cost = GetUpgradeCost(nextLevel);
 
         if (!GameManager.Instance.SpendMoney(cost)) return;
 
@@ -68,7 +68,7 @@ public class MarketingManager : MonoBehaviour
     private void UpdateUI()
     {
         if (_txtMarketingLevel) _txtMarketingLevel.text = "Marketing niv. " + MarketingLevel;
-        if (_txtUpgradeCost)    _txtUpgradeCost.text    = "Prochain niv. : " + GetUpgradeCost(MarketingLevel + 1).ToString("F2") + "$";
-        if (_txtDemandBonus)    _txtDemandBonus.text    = "Bonus demande : +" + GetDemandBonus().ToString("F0") + "%";
+        if (_txtUpgradeCost) _txtUpgradeCost.text = "Prochain niv. : " + GetUpgradeCost(MarketingLevel + 1).ToString("F2") + "$";
+        if (_txtDemandBonus) _txtDemandBonus.text = "Bonus demande : +" + GetDemandBonus().ToString("F0") + "%";
     }
 }

@@ -40,6 +40,7 @@ public class ProductionManager : MonoBehaviour
     [SerializeField] private TMP_Text _txtBatchUpgradeCost;
     [SerializeField] private TMP_Text _txtManufactureLevel;
     [SerializeField] private TMP_Text _txtManufactureCost;
+    [SerializeField] private TMP_Text _txtNotification;
 
     // ─────────────────────────────────────────
     private void Awake()
@@ -64,6 +65,7 @@ public class ProductionManager : MonoBehaviour
         if (GameManager.Instance.TotalWood <= 0)
         {
             Debug.Log("Pas de bois — achète une batch !");
+            _txtNotification.text = "Pas de bois — achète une batch !";
             return;
         }
         GameManager.Instance.RemoveWood(1);
@@ -99,13 +101,14 @@ public class ProductionManager : MonoBehaviour
         int batchSize = GetCurrentBatchSize();
         if (GameManager.Instance.ForestRemaining <= 0)
         {
-            Debug.Log("Plus de forêt disponible !");
+            _txtNotification.text = "Plus de forêt disponible...";
             GameManager.Instance.DeductMoney(-_woodBatchCost); // rembourse
             return;
         }
 
         GameManager.Instance.AddWood(batchSize);
-        Debug.Log("Acheté " + batchSize + " cm de bois pour " + _woodBatchCost.ToString("F2") + "$");
+        _txtNotification.text = "Acheté " + batchSize + " cm de bois pour " + _woodBatchCost.ToString("F2") + "$";
+
     }
 
     // ── Bouton : Améliorer la batch de bois ──
@@ -115,7 +118,7 @@ public class ProductionManager : MonoBehaviour
         if (!GameManager.Instance.SpendMoney(cost)) return;
 
         WoodBatchLevel++;
-        Debug.Log("Batch niv." + WoodBatchLevel + " — " + GetCurrentBatchSize() + " cm par achat");
+        _txtNotification.text = "Batch niv." + WoodBatchLevel + " — " + GetCurrentBatchSize() + " cm par achat";
     }
 
     // ── Bouton : Améliorer la manufacture ────
@@ -126,7 +129,7 @@ public class ProductionManager : MonoBehaviour
 
         ManufactureLevel++;
         _autoProductionRate += 2; // +2 papier/sec par niveau
-        Debug.Log("Manufacture niv." + ManufactureLevel + " — auto : " + _autoProductionRate + " papier/sec");
+        _txtNotification.text = "Manufacture niv." + ManufactureLevel + " — auto : " + _autoProductionRate + " papier/sec";
     }
 
     // ── Formules ──────────────────────────────
@@ -155,10 +158,10 @@ public class ProductionManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        if (_txtBatchSize)         _txtBatchSize.text         = "Batch : "           + GetCurrentBatchSize() + " cm";
-        if (_txtBatchCost)         _txtBatchCost.text         = "Coût achat : "      + _woodBatchCost.ToString("F2") + "$";
-        if (_txtBatchUpgradeCost)  _txtBatchUpgradeCost.text  = "Upgrade batch : "   + GetWoodUpgradeCost().ToString("F2") + "$";
-        if (_txtManufactureLevel)  _txtManufactureLevel.text  = "Manufacture niv. "  + ManufactureLevel;
-        if (_txtManufactureCost)   _txtManufactureCost.text   = "Upgrade : "         + GetManufactureCost().ToString("F2") + "$";
+        if (_txtBatchSize) _txtBatchSize.text = "Batch : " + GetCurrentBatchSize() + " cm";
+        if (_txtBatchCost) _txtBatchCost.text = "Coût achat : " + _woodBatchCost.ToString("F2") + "$";
+        if (_txtBatchUpgradeCost) _txtBatchUpgradeCost.text = "Upgrade batch : " + GetWoodUpgradeCost().ToString("F2") + "$";
+        if (_txtManufactureLevel) _txtManufactureLevel.text = "( " + ManufactureLevel + " )";
+        if (_txtManufactureCost) _txtManufactureCost.text = "Upgrade : " + GetManufactureCost().ToString("F2") + "$";
     }
 }

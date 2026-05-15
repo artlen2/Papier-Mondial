@@ -12,16 +12,18 @@ public class GameManager : MonoBehaviour
 
     // ── Ressources partagées ──────────────────
     public int TotalPaperOveral { get; private set; } = 0;
-    public int   TotalPaper       { get; private set; } = 0;
-    public int   TotalWood        { get; private set; } = 0;
-    public float Money            { get; private set; } = 50f;
+    public int TotalPaper { get; private set; } = 0;
+    public int TotalWood { get; private set; } = 0;
+    public float Money { get; private set; } = 15f;
     public float TotalMoneyEarned { get; private set; } = 0f;
+    public string Notification = "Les notifications sont ici.";
 
     [Header("Forêt (condition de victoire)")]
     [SerializeField] private int _totalForestWood = 500000;
-    public int TotalForestWood    => _totalForestWood;
+
+    public int TotalForestWood => _totalForestWood;
     public int WoodHarvestedTotal { get; private set; } = 0;
-    public int ForestRemaining    => _totalForestWood - WoodHarvestedTotal;
+    public int ForestRemaining => _totalForestWood - WoodHarvestedTotal;
 
     // ── État ─────────────────────────────────
     public enum Gamestate { STARTED, WIN, GAMEOVER }
@@ -29,7 +31,7 @@ public class GameManager : MonoBehaviour
 
     // ── Score & temps ─────────────────────────
     private float _gameTime   = 0f;
-    public  int   FinalScore  { get; private set; } = 0;
+    public int FinalScore  { get; private set; } = 0;
 
     // ── UI ───────────────────────────────────
     [Header("UI — Ressources")]
@@ -38,6 +40,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text _txtWood;
     [SerializeField] private TMP_Text _txtMoney;
     [SerializeField] private TMP_Text _txtForestRemaining;
+
+    [SerializeField] private TMP_Text _txtNotification;
 
     [Header("UI — Fin de partie")]
     [SerializeField] private GameObject _winScreen;
@@ -53,7 +57,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        if (_winScreen)      _winScreen.SetActive(false);
+        if (_winScreen) _winScreen.SetActive(false);
         if (_gameoverScreen) _gameoverScreen.SetActive(false);
     }
 
@@ -67,7 +71,7 @@ public class GameManager : MonoBehaviour
 
     // ── Méthodes de modification des ressources ──
 
-    public void AddPaper(int amount)   { TotalPaper = Mathf.Max(0, TotalPaper + amount, TotalPaperOveral + amount); }
+    public void AddPaper(int amount) { TotalPaper = Mathf.Max(0, TotalPaper + amount, TotalPaperOveral + amount); }
     public void RemovePaper(int amount){ TotalPaper = Mathf.Max(0, TotalPaper - amount); }
 
     public void AddWood(int amount)
@@ -119,18 +123,18 @@ public class GameManager : MonoBehaviour
     private void EndGame(bool isWin)
     {
         CurrentGamestate = isWin ? Gamestate.WIN : Gamestate.GAMEOVER;
-        FinalScore       = CalculateScore();
+        FinalScore = CalculateScore();
 
         // Les autres managers peuvent lire FinalScore pour l'afficher
-        if (isWin  && _winScreen)      _winScreen.SetActive(true);
+        if (isWin && _winScreen) _winScreen.SetActive(true);
         if (!isWin && _gameoverScreen) _gameoverScreen.SetActive(true);
-        if (_txtFinalScore)            _txtFinalScore.text = "Score final : " + FinalScore.ToString("N0");
+        if (_txtFinalScore) _txtFinalScore.text = "Score final : " + FinalScore.ToString("N0");
     }
 
     // score = (argent total cumulé) * (employés + niveau manufacture) + temps (ms)
     private int CalculateScore()
     {
-        int employees   = EmployeeManager.Instance   != null ? EmployeeManager.Instance.EmployeeCount     : 0;
+        int employees = EmployeeManager.Instance != null ? EmployeeManager.Instance.EmployeeCount : 0;
         int manufacture = ProductionManager.Instance != null ? ProductionManager.Instance.ManufactureLevel : 1;
         return Mathf.FloorToInt(TotalMoneyEarned * (employees + manufacture) + _gameTime * 1000f);
     }
@@ -144,10 +148,10 @@ public class GameManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        if (_txtTotalPaper) _txtTotalPaper.text           = "Papier Total : "  + TotalPaperOveral;
-        if (_txtPaper)           _txtPaper.text           = "Papier : "  + TotalPaper + " feuilles";
-        if (_txtWood)            _txtWood.text            = "Bois : "    + TotalWood  + " cm";
-        if (_txtMoney)           _txtMoney.text           = "Argent : "  + Money.ToString("F2") + "$";
-        if (_txtForestRemaining) _txtForestRemaining.text = "Forêt : "   + ForestRemaining + " / " + _totalForestWood;
+        if (_txtTotalPaper) _txtTotalPaper.text = "Papier Total : "  + TotalPaperOveral;
+        if (_txtPaper) _txtPaper.text = "Papier : " + TotalPaper + " feuilles";
+        if (_txtWood) _txtWood.text = "Bois : " + TotalWood  + " cm";
+        if (_txtMoney) _txtMoney.text = "Argent : "  + Money.ToString("F2") + "$";
+        if (_txtForestRemaining) _txtForestRemaining.text = "Forêt : " + ForestRemaining + " / " + _totalForestWood;
     }
 }
