@@ -40,7 +40,6 @@ public class ProductionManager : MonoBehaviour
     [SerializeField] private TMP_Text _txtBatchUpgradeCost;
     [SerializeField] private TMP_Text _txtManufactureLevel;
     [SerializeField] private TMP_Text _txtManufactureCost;
-    [SerializeField] private TMP_Text _txtNotification;
 
     // ─────────────────────────────────────────
     private void Awake()
@@ -65,7 +64,7 @@ public class ProductionManager : MonoBehaviour
         if (GameManager.Instance.TotalWood <= 0)
         {
             Debug.Log("Pas de bois — achète une batch !");
-            _txtNotification.text = "Pas de bois — achète une batch !";
+            GameManager.Instance.ShowNotification("Pas de bois — achète une batch !");
             return;
         }
         GameManager.Instance.RemoveWood(1);
@@ -73,14 +72,10 @@ public class ProductionManager : MonoBehaviour
     }
 
     // ── Production automatique ────────────────
-    // (manufacture upgrades + employés via EmployeeManager)
+    // (manufacture upgrades )
     private void HandleAutoProduction()
     {
-        int employeeBonus = EmployeeManager.Instance != null
-            ? Mathf.FloorToInt(EmployeeManager.Instance.EmployeeCount * EmployeeManager.Instance.ProductionBonus)
-            : 0;
-
-        int totalRate = _autoProductionRate + employeeBonus;
+        int totalRate = _autoProductionRate;
         if (totalRate <= 0) return;
 
         _autoTimer += Time.deltaTime;
@@ -101,13 +96,13 @@ public class ProductionManager : MonoBehaviour
         int batchSize = GetCurrentBatchSize();
         if (GameManager.Instance.ForestRemaining <= 0)
         {
-            _txtNotification.text = "Plus de forêt disponible...";
+            GameManager.Instance.ShowNotification ("Plus de forêt disponible...");
             GameManager.Instance.DeductMoney(-_woodBatchCost); // rembourse
             return;
         }
 
         GameManager.Instance.AddWood(batchSize);
-        _txtNotification.text = "Acheté " + batchSize + " cm de bois pour " + _woodBatchCost.ToString("F2") + "$";
+        GameManager.Instance.ShowNotification("Acheté " + batchSize + " cm de bois pour " + _woodBatchCost.ToString("F2") + "$");
 
     }
 
@@ -118,7 +113,7 @@ public class ProductionManager : MonoBehaviour
         if (!GameManager.Instance.SpendMoney(cost)) return;
 
         WoodBatchLevel++;
-        _txtNotification.text = "Batch niv." + WoodBatchLevel + " — " + GetCurrentBatchSize() + " cm par achat";
+        GameManager.Instance.ShowNotification( "Batch niv." + WoodBatchLevel + " — " + GetCurrentBatchSize() + " cm par achat");
     }
 
     // ── Bouton : Améliorer la manufacture ────
@@ -129,7 +124,7 @@ public class ProductionManager : MonoBehaviour
 
         ManufactureLevel++;
         _autoProductionRate += 2; // +2 papier/sec par niveau
-        _txtNotification.text = "Manufacture niv." + ManufactureLevel + " — auto : " + _autoProductionRate + " papier/sec";
+        GameManager.Instance.ShowNotification( "Manufacture niv." + ManufactureLevel + " — auto : " + _autoProductionRate + " papier/sec");
     }
 
     // ── Formules ──────────────────────────────
@@ -160,8 +155,8 @@ public class ProductionManager : MonoBehaviour
     {
         if (_txtBatchSize) _txtBatchSize.text = "Batch : " + GetCurrentBatchSize() + " cm";
         if (_txtBatchCost) _txtBatchCost.text = "Coût achat : " + _woodBatchCost.ToString("F2") + "$";
-        if (_txtBatchUpgradeCost) _txtBatchUpgradeCost.text = "Upgrade batch : " + GetWoodUpgradeCost().ToString("F2") + "$";
+        if (_txtBatchUpgradeCost) _txtBatchUpgradeCost.text = "LVL up batch : " + GetWoodUpgradeCost().ToString("F2") + "$";
         if (_txtManufactureLevel) _txtManufactureLevel.text = "( " + ManufactureLevel + " )";
-        if (_txtManufactureCost) _txtManufactureCost.text = "Upgrade : " + GetManufactureCost().ToString("F2") + "$";
+        if (_txtManufactureCost) _txtManufactureCost.text = "LVL up la manufacturie : " + GetManufactureCost().ToString("F2") + "$";
     }
 }

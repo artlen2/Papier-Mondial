@@ -41,6 +41,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text _txtMoney;
     [SerializeField] private TMP_Text _txtForestRemaining;
 
+    [Header("UI — Notification")]
     [SerializeField] private TMP_Text _txtNotification;
 
     [Header("UI — Fin de partie")]
@@ -131,17 +132,25 @@ public class GameManager : MonoBehaviour
         if (_txtFinalScore) _txtFinalScore.text = "Score final : " + FinalScore.ToString("N0");
     }
 
-    // score = (argent total cumulé) * (employés + niveau manufacture) + temps (ms)
+    // score = (argent total cumulé) * (niveau manufacture) + temps (ms)
     private int CalculateScore()
     {
-        int employees = EmployeeManager.Instance != null ? EmployeeManager.Instance.EmployeeCount : 0;
         int manufacture = ProductionManager.Instance != null ? ProductionManager.Instance.ManufactureLevel : 1;
-        return Mathf.FloorToInt(TotalMoneyEarned * (employees + manufacture) + _gameTime * 1000f);
+        return Mathf.FloorToInt(TotalMoneyEarned * manufacture + _gameTime * 1000f);
     }
 
     public void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    // ── Notification centrale ─────────────────
+    
+
+    public void ShowNotification(string message)
+    {
+        if (_txtNotification == null) return;
+        _txtNotification.text = message;
     }
 
     // ── UI ───────────────────────────────────

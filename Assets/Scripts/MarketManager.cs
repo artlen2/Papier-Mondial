@@ -67,13 +67,15 @@ public class MarketManager : MonoBehaviour
     // Prix élevé -> priceFactor grand -> demande basse
     public float GetDemandPercent()
     {
-        float priceFactor    = (_sellPrice / _maxPrice) * 100f;
+        // Calibré : 0.01$ = 110%,  0.08$ = 30%
+        float exposant = 0.2f;
+        float rawDemand = Mathf.Pow(_minPrice / _sellPrice, exposant) * 100f;
         float marketingBonus = MarketingManager.Instance != null
             ? MarketingManager.Instance.GetDemandBonus()
             : 0f;
-        float eventBonus     = (_marketEventMultiplier - 1f) * 50f;
+        float eventBonus = (_marketEventMultiplier - 1f) * 50f;
 
-        return Mathf.Clamp(100f - priceFactor + marketingBonus + eventBonus, 0f, 100f);
+        return Mathf.Clamp(rawDemand + marketingBonus + eventBonus, 0f, 200f);
     }
 
     // ── Vente automatique ─────────────────────
@@ -81,21 +83,33 @@ public class MarketManager : MonoBehaviour
     {
         if (GameManager.Instance.TotalPaper <= 0) return;
 
-        _sellTimer += Time.deltaTime;
-        if (_sellTimer < _sellInterval) return;
-
+        // Timer variable : 110% demande = 0.5s,  0% = 5s
+        // intervalle = lerp(5, 0.5, demande / 110)
         float demand = GetDemandPercent();
-        int   sold   = Mathf.FloorToInt(GameManager.Instance.TotalPaper * (demand / 100f));
+        float interval = Mathf.Lerp(5f, 0.5f, demand / 110f);
 
-        if (sold > 0)
+        _sellTimer += Time.deltaTime;
+        if (_sellTimer < interval) return;
+        _sellTimer = 0f;
+
+        // Chance d'achat nulle si demande trop basse
+        // En dessous de 10% : probabilité proportionnelle (10% demande = 9% chance)
+        float buyChance = demand / 100f;
+        if (Random.value > buyChance)
         {
-            float earned = sold * _sellPrice;
-            GameManager.Instance.RemovePaper(sold);
-            GameManager.Instance.AddMoney(earned);
-            Debug.Log("Vendu " + sold + " papiers à " + _sellPrice.ToString("F2") + " $ — +" + earned.ToString("F2") + " $");
+            GameManager.Instance.ShowNotification("Personne n'achète.");
+            return;
         }
 
-        _sellTimer = 0f;
+        // Quantité vendue : proportion du stock selon la demande
+        int sold = Mathf.Max(1, Mathf.FloorToInt(GameManager.Instance.TotalPaper * (demand / 100f)));
+
+        float earned = sold * _sellPrice;
+        GameManager.Instance.RemovePaper(sold);
+        GameManager.Instance.AddMoney(earned);
+        GameManager.Instance.ShowNotification(
+            "Vendu " + sold + " feuilles à " + _sellPrice.ToString("F2") + "$ — +" + earned.ToString("F2") + "$"
+        );
     }
 
     // ── Boutons prix + / - ────────────────────
