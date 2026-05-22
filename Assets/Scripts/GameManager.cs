@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     // ── Ressources partagées ──────────────────
     public int TotalPaperOveral { get; private set; } = 0;
     public int TotalPaper { get; private set; } = 0;
-    public int TotalWood { get; private set; } = 200;
+    public int TotalWood { get; private set; } = 0;
     public float Money { get; private set; } = 15f;
     public float TotalMoneyEarned { get; private set; } = 0f;
     public string Notification = "Les notifications sont ici.";
@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour
     // ── UI ───────────────────────────────────
     [Header("UI — Ressources")]
     [SerializeField] private TMP_Text _txtTotalPaper;
+    [SerializeField] private TMP_Text _txtTotalMoney;
     [SerializeField] private TMP_Text _txtPaper;
     [SerializeField] private TMP_Text _txtWood;
     [SerializeField] private TMP_Text _txtMoney;
@@ -44,10 +45,12 @@ public class GameManager : MonoBehaviour
 
     [Header("UI — Notification")]
     [SerializeField] private TMP_Text _txtNotification;
+    [SerializeField] private TMP_Text _txtMajorNotification;
     [SerializeField] private Color _colorNormal = Color.white;
     [SerializeField] private Color _colorImportant = new Color(1f, 0.6f, 0.1f); // orange
-    [SerializeField] private float _normalFontSize = 18f;
+    [SerializeField] private float _normalFontSize = 20f;
     [SerializeField] private float _importantFontSize = 24f;
+    [SerializeField] private float _defaultNotificationDuration = 4f;
 
     [Header("UI — Fin de partie")]
     [SerializeField] private GameObject _winScreen;
@@ -67,6 +70,7 @@ public class GameManager : MonoBehaviour
         if (_winScreen) _winScreen.SetActive(false);
         if (_gameoverScreen) _gameoverScreen.SetActive(false);
         if (_txtNotification) _txtNotification.text = "Bienvenue chez Papier Mondial !";
+        if (_txtMajorNotification) _txtMajorNotification.text = " ";
     }
 
     private void Update()
@@ -141,6 +145,7 @@ public class GameManager : MonoBehaviour
         if (isWin && _winScreen) _winScreen.SetActive(true);
         if (!isWin && _gameoverScreen) _gameoverScreen.SetActive(true);
         if (_txtFinalScore) _txtFinalScore.text = "Score final : " + FinalScore.ToString("N0");
+        Debug.Log(FinalScore.ToString());
     }
 
     // score = (argent total cumulé) * (niveau manufacture) + temps (ms)
@@ -159,26 +164,27 @@ public class GameManager : MonoBehaviour
 
 
     // Notification temporaire normale — petits événements sans impact
-    public void ShowNotification(string message, float duration = 4f)
+    public void ShowNotification(string message, float duration = -1f)
     {
         if (_txtNotification == null) return;
+        float d = duration < 0f ? _defaultNotificationDuration : duration;
         _isNotificationActive = true;
         _txtNotification.text = message;
         _txtNotification.color = _colorNormal;
         _txtNotification.fontSize = _normalFontSize;
         StopCoroutine("ClearNotification");
-        StartCoroutine(ClearNotification(duration));
+        StartCoroutine(ClearNotification(d));
     }
 
     // Notification persistante importante — événements qui impactent le jeu
     public void ShowPersistentNotification(string message)
     {
-        if (_txtNotification == null) return;
+        if (_txtMajorNotification == null) return;
         StopCoroutine("ClearNotification");
         _isNotificationActive = true;
-        _txtNotification.text = message;
-        _txtNotification.color = _colorImportant;
-        _txtNotification.fontSize = _importantFontSize;
+        _txtMajorNotification.text = message;
+        _txtMajorNotification.color = _colorImportant;
+        _txtMajorNotification.fontSize = _importantFontSize;
     }
 
     private IEnumerator ClearNotification(float delay)
@@ -195,6 +201,7 @@ public class GameManager : MonoBehaviour
     private void UpdateUI()
     {
         if (_txtTotalPaper) _txtTotalPaper.text = "Papier Total : "  + TotalPaperOveral;
+        if (_txtTotalMoney) _txtTotalMoney.text = "Argent Total : "  + TotalMoneyEarned;
         if (_txtPaper) _txtPaper.text = "Papier : " + TotalPaper + " feuilles";
         if (_txtWood) _txtWood.text = "Bois : " + TotalWood  + " cm";
         if (_txtMoney) _txtMoney.text = "Argent : "  + Money.ToString("F2") + "$";

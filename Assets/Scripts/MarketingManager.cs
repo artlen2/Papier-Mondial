@@ -12,9 +12,9 @@ public class MarketingManager : MonoBehaviour
 
     // ── Marketing ─────────────────────────────
     [Header("Marketing")]
-    [SerializeField] private float _p = 1.5f; // exposant
-    [SerializeField] private float _c = 0.5f; // coefficient
-    [SerializeField] private float _b = 400f;  // base
+    [SerializeField] private float _exposant = 1.5f; // exposant
+    [SerializeField] private float _coefficient = 0.5f; // coefficient
+    [SerializeField] private float _base = 15f;  // base
     [SerializeField] private float _demandBonusPerLevel = 5f;  // +5% demande par niveau
     public  int MarketingLevel { get; private set; } = 0;
 
@@ -54,7 +54,7 @@ public class MarketingManager : MonoBehaviour
     // Coût niveau n = c * n^p + b
     public float GetUpgradeCost(int level)
     {
-        return _c * Mathf.Pow(level, _p) + _b;
+        return _coefficient * Mathf.Pow(level, _exposant) + _base;
     }
 
     // Bonus de demande total en %

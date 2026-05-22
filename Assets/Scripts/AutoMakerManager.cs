@@ -73,7 +73,7 @@ public class AutoMakerManager : MonoBehaviour
         AutoMakerCount++;
         GameManager.Instance.ShowNotification(
             "Auto-maker acheté ! Total : " + AutoMakerCount
-            + " (" + TotalPaperPerSec.ToString("F1") + " papier/sec)"
+            + " (" + Mathf.FloorToInt(TotalPaperPerSec) + " papier/sec)"
         );
     }
 
@@ -82,8 +82,7 @@ public class AutoMakerManager : MonoBehaviour
     // Exemple : 25$, 28.75$, 33.06$, 38.02$...
     public float GetNextCost()
     {
-        float discount = ProjectManager.Instance != null ? ProjectManager.Instance.AutoMakerDiscount : 0f;
-        return _baseCost * Mathf.Pow(_costMultiplier, AutoMakerCount) * (1f - discount);
+        return _baseCost * Mathf.Pow(_costMultiplier, AutoMakerCount) * (1f);
     }
 
     // ── UI ───────────────────────────────────
@@ -91,6 +90,6 @@ public class AutoMakerManager : MonoBehaviour
     {
         if (_txtAutoMakerCount) _txtAutoMakerCount.text = "Auto-makers : " + AutoMakerCount;
         if (_txtAutoMakerCost) _txtAutoMakerCost.text = "Prochain : " + GetNextCost().ToString("F2") + "$";
-        if (_txtPaperPerSec) _txtPaperPerSec.text = "Production : " + TotalPaperPerSec.ToString("F1") + " papier/sec";
+        if (_txtPaperPerSec) _txtPaperPerSec.text = "Production : " + Mathf.FloorToInt(TotalPaperPerSec) + " papier/sec";
     }
 }

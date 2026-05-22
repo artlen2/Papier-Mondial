@@ -15,4 +15,13 @@ public class SceneSwitcher : MonoBehaviour
     {
         SceneManager.LoadScene(sceneName);
     }
+
+
+    public void QuitGame()
+    {
+        // Quits the application
+        Application.Quit();
+
+        Debug.Log("Game is exiting");
+    }
 }

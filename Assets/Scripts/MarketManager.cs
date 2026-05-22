@@ -93,10 +93,7 @@ public class MarketManager : MonoBehaviour
     {
         
         float rawDemand = Mathf.Pow(_minPrice / _sellPrice, exposant) * 100f;
-        float marketingBonus = (MarketingManager.Instance != null
-    ? MarketingManager.Instance.GetDemandBonus() : 0f)
-    + (ProjectManager.Instance != null
-    ? ProjectManager.Instance.ProjectMarketingBonus : 0f);
+        float marketingBonus = (MarketingManager.Instance != null ? MarketingManager.Instance.GetDemandBonus() : 0f);
         float eventBonus = (_marketEventMultiplier - 1f) * 50f;
 
         return Mathf.Clamp(rawDemand + marketingBonus + eventBonus, 0f, 200f);
@@ -180,7 +177,7 @@ public class MarketManager : MonoBehaviour
     private void HandleEventThresholds()
     {
         if (_nextThresholdIndex >= _eventThresholds.Length) return;
-        if (GameManager.Instance.TotalMoneyEarned >= _eventThresholds[_nextThresholdIndex])
+        if (GameManager.Instance.TotalPaperOveral >= _eventThresholds[_nextThresholdIndex])
         {
             TriggerRandomEvent();
             _nextThresholdIndex++;
@@ -207,7 +204,7 @@ public class MarketManager : MonoBehaviour
                 break;
             case 2:
                 name = "Feu de forêt";
-                GameManager.Instance.DamageForest(30000);
+                GameManager.Instance.DamageForest(300);
                 break;
             case 3:
                 name = "Crise économique";
