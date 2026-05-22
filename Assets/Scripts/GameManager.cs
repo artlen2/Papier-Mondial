@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using System.Collections;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -13,7 +14,7 @@ public class GameManager : MonoBehaviour
     // ── Ressources partagées ──────────────────
     public int TotalPaperOveral { get; private set; } = 0;
     public int TotalPaper { get; private set; } = 0;
-    public int TotalWood { get; private set; } = 0;
+    public int TotalWood { get; private set; } = 200;
     public float Money { get; private set; } = 15f;
     public float TotalMoneyEarned { get; private set; } = 0f;
     public string Notification = "Les notifications sont ici.";
@@ -60,6 +61,7 @@ public class GameManager : MonoBehaviour
     {
         if (_winScreen) _winScreen.SetActive(false);
         if (_gameoverScreen) _gameoverScreen.SetActive(false);
+        if (_txtNotification) _txtNotification.text = "Bienvenue chez Papier Mondial !";
     }
 
     private void Update()
@@ -72,7 +74,11 @@ public class GameManager : MonoBehaviour
 
     // ── Méthodes de modification des ressources ──
 
-    public void AddPaper(int amount) { TotalPaper = Mathf.Max(0, TotalPaper + amount, TotalPaperOveral + amount); }
+    public void AddPaper(int amount)
+    {
+        TotalPaper = Mathf.Max(0, TotalPaper + amount);
+        TotalPaperOveral += amount; // compteur cumulatif, ne se soustrait jamais
+    }
     public void RemovePaper(int amount){ TotalPaper = Mathf.Max(0, TotalPaper - amount); }
 
     public void AddWood(int amount)
@@ -94,7 +100,7 @@ public class GameManager : MonoBehaviour
     {
         if (Money < amount)
         {
-            Debug.Log("Pas assez d'argent ! (besoin : " + amount.ToString("F2") + "$)");
+            GameManager.Instance.ShowNotification("Pas assez d'argent ! (besoin : " + amount.ToString("F2") + "$)");
             return false;
         }
         Money -= amount;
@@ -145,12 +151,20 @@ public class GameManager : MonoBehaviour
     }
 
     // ── Notification centrale ─────────────────
-    
+
 
     public void ShowNotification(string message)
     {
         if (_txtNotification == null) return;
         _txtNotification.text = message;
+        StopCoroutine("ClearNotification");
+        StartCoroutine(ClearNotification(4f));
+    }
+
+    private IEnumerator ClearNotification(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (_txtNotification) _txtNotification.text = "";
     }
 
     // ── UI ───────────────────────────────────

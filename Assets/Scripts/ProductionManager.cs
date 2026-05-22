@@ -102,7 +102,7 @@ public class ProductionManager : MonoBehaviour
         }
 
         GameManager.Instance.AddWood(batchSize);
-        GameManager.Instance.ShowNotification("Acheté " + batchSize + " cm de bois pour " + _woodBatchCost.ToString("F2") + "$");
+        SalesLog.Instance.AddEntry("Acheté " + batchSize + " cm de bois pour " + _woodBatchCost.ToString("F2") + "$");
 
     }
 

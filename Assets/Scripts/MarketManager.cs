@@ -4,8 +4,7 @@ using System.Collections;
 
 /// <summary>
 /// Gère le prix de vente, la demande en %, la vente automatique et les événements de marché.
-/// La demande% détermine la vitesse à laquelle le stock de papier se vend.
-/// Plus le prix est bas -> demande haute -> papier vendu plus vite.
+/// Sweet spot autour de 0.03-0.05$ — le revenu/sec estimé est affiché pour aider le joueur.
 /// </summary>
 public class MarketManager : MonoBehaviour
 {
@@ -13,21 +12,24 @@ public class MarketManager : MonoBehaviour
 
     // ── Prix ──────────────────────────────────
     [Header("Prix de vente")]
-    [SerializeField] private float _sellPrice = 0.2f;
-    [SerializeField] private float _minPrice  = 0.01f;
-    [SerializeField] private float _maxPrice  = 10f;
-    [SerializeField] private float _priceStep = 0.05f; 
+    [SerializeField] private float _sellPrice = 0.02f;
+    [SerializeField] private float _minPrice = 0.01f;
+    [SerializeField] private float _maxPrice = 10f;
+    [SerializeField] private float _priceStep = 0.01f;
     public float SellPrice => _sellPrice;
 
-    // ── Vente auto ────────────────────────────
-    // Toutes les X secondes, le jeu vend floor(stock * demande% / 100) feuilles
-    [Header("Vente automatique")]
-    [SerializeField] private float _sellInterval = 3f;
+    // ── Timers ────────────────────────────────
+    [Header("Vente")]
     private float _sellTimer = 0f;
+    private float _logTimer = 0f;
+    [SerializeField] private float _logInterval = 5f; // résumé toutes les X secondes
+
+    // Ventes accumulées entre deux résumés
+    private int _pendingSales = 0;
+    private float _pendingEarned = 0f;
 
     // ── Demande ───────────────────────────────
-    // demande% = clamp(100 - (prix / prixMax * 100) + bonusMarketing + bonusEvent, 0, 100)
-    private float _marketEventMultiplier = 1f; // modifié par les événements
+    private float _marketEventMultiplier = 1f;
 
     // ── Événements ────────────────────────────
     [Header("Événements de marché")]
@@ -38,18 +40,13 @@ public class MarketManager : MonoBehaviour
     [Header("UI — Marché")]
     [SerializeField] private TMP_Text _txtSellPrice;
     [SerializeField] private TMP_Text _txtDemandPercent;
-    [SerializeField] private TMP_Text _txtEventNotification;
+    [SerializeField] float exposant = 0.6f;
 
     // ─────────────────────────────────────────
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
-    }
-
-    private void Start()
-    {
-        if (_txtEventNotification) _txtEventNotification.text = "";
     }
 
     private void Update()
@@ -63,67 +60,93 @@ public class MarketManager : MonoBehaviour
     }
 
     // ── Demande en % ──────────────────────────
-    // Prix bas  -> priceFactor petit  -> demande haute
-    // Prix élevé -> priceFactor grand -> demande basse
+    // Sweet spot autour de 0.03-0.05$
+    // 0.01$ = 100%,  0.02$ = 87%,  0.05$ = ~50%,  0.10$ = ~20%,  0.50$ = ~5%
+    // Le marketing peut pousser au-delà de 100%
     public float GetDemandPercent()
     {
-        // Calibré : 0.01$ = 110%,  0.08$ = 30%
-        float exposant = 0.2f;
+        
         float rawDemand = Mathf.Pow(_minPrice / _sellPrice, exposant) * 100f;
-        float marketingBonus = MarketingManager.Instance != null
-            ? MarketingManager.Instance.GetDemandBonus()
-            : 0f;
+        float marketingBonus = (MarketingManager.Instance != null
+    ? MarketingManager.Instance.GetDemandBonus() : 0f)
+    + (ProjectManager.Instance != null
+    ? ProjectManager.Instance.ProjectMarketingBonus : 0f);
         float eventBonus = (_marketEventMultiplier - 1f) * 50f;
 
         return Mathf.Clamp(rawDemand + marketingBonus + eventBonus, 0f, 200f);
     }
 
     // ── Vente automatique ─────────────────────
+    // Tick rapide si demande haute, lent si demande basse
+    // Toutes les _logInterval secondes, affiche un résumé dans le SalesLog
     private void HandleAutoSell()
     {
-        if (GameManager.Instance.TotalPaper <= 0) return;
-
-        // Timer variable : 110% demande = 0.5s,  0% = 5s
-        // intervalle = lerp(5, 0.5, demande / 110)
-        float demand = GetDemandPercent();
-        float interval = Mathf.Lerp(5f, 0.5f, demand / 110f);
-
-        _sellTimer += Time.deltaTime;
-        if (_sellTimer < interval) return;
-        _sellTimer = 0f;
-
-        // Chance d'achat nulle si demande trop basse
-        // En dessous de 10% : probabilité proportionnelle (10% demande = 9% chance)
-        float buyChance = demand / 100f;
-        if (Random.value > buyChance)
+        if (GameManager.Instance.TotalPaper <= 0)
         {
-            GameManager.Instance.ShowNotification("Personne n'achète.");
+            _logTimer += Time.deltaTime;
+            FlushLogIfReady();
             return;
         }
 
-        // Quantité vendue : proportion du stock selon la demande
-        int sold = Mathf.Max(1, Mathf.FloorToInt(GameManager.Instance.TotalPaper * (demand / 100f)));
+        float demand = GetDemandPercent();
+        float interval = Mathf.Lerp(3f, 0.1f, demand / 150f);
 
-        float earned = sold * _sellPrice;
-        GameManager.Instance.RemovePaper(sold);
-        GameManager.Instance.AddMoney(earned);
-        GameManager.Instance.ShowNotification(
-            "Vendu " + sold + " feuilles à " + _sellPrice.ToString("F2") + "$ — +" + earned.ToString("F2") + "$"
-        );
+        _sellTimer += Time.deltaTime;
+        _logTimer += Time.deltaTime;
+
+        // Tick de vente
+        if (_sellTimer >= interval)
+        {
+            _sellTimer = 0f;
+
+            // demande% = probabilité qu'une feuille soit vendue ce tick
+            if (Random.value <= demand / 100f && GameManager.Instance.TotalPaper > 0)
+            {
+                GameManager.Instance.RemovePaper(1);
+                GameManager.Instance.AddMoney(_sellPrice);
+                _pendingSales++;
+                _pendingEarned += _sellPrice;
+            }
+        }
+
+        FlushLogIfReady();
+    }
+
+    // Affiche le résumé toutes les _logInterval secondes
+    private void FlushLogIfReady()
+    {
+        if (_logTimer < _logInterval) return;
+        _logTimer = 0f;
+
+        if (_pendingSales > 0)
+        {
+            SalesLog.Instance?.AddEntry(
+                _pendingSales + " feuilles vendues à " + _sellPrice.ToString("F2")
+                + "$ — +" + _pendingEarned.ToString("F2") + "$"
+            );
+        }
+        else
+        {
+            return;
+            //SalesLog.Instance?.AddEntry("Personne n'a acheté.");
+        }
+
+        _pendingSales = 0;
+        _pendingEarned = 0f;
     }
 
     // ── Boutons prix + / - ────────────────────
     public void OnClickPriceUp()
     {
-        _sellPrice = Mathf.Round(Mathf.Clamp(_sellPrice + _priceStep, _minPrice, _maxPrice) * 100f) / 100f;
+        _sellPrice = Mathf.Round(Mathf.Clamp(_sellPrice + _priceStep, _minPrice, _maxPrice) * 1000f) / 1000f;
     }
 
     public void OnClickPriceDown()
     {
-        _sellPrice = Mathf.Round(Mathf.Clamp(_sellPrice - _priceStep, _minPrice, _maxPrice) * 100f) / 100f;
+        _sellPrice = Mathf.Round(Mathf.Clamp(_sellPrice - _priceStep, _minPrice, _maxPrice) * 1000f) / 1000f;
     }
 
-    // ── Événements ────────────────────────────
+    // ── Événements de marché ──────────────────
     private void HandleEventThresholds()
     {
         if (_nextThresholdIndex >= _eventThresholds.Length) return;
@@ -136,24 +159,26 @@ public class MarketManager : MonoBehaviour
 
     private void TriggerRandomEvent()
     {
-        int    roll     = Random.Range(0, 6);
-        string name     = "";
-        float  duration = 15f;
+        int roll = Random.Range(0, 6);
+        string name = "";
+        float duration = 15f;
 
         switch (roll)
         {
-            case 0: name = "Grève des enseignants";    StartCoroutine(ApplyMarketEvent(0.3f, duration)); break;
-            case 1: name = "Rentrée scolaire";         StartCoroutine(ApplyMarketEvent(2.5f, duration)); break;
+            case 0: name = "Grève des enseignants"; StartCoroutine(ApplyMarketEvent(0.3f, duration)); break;
+            case 1: name = "Rentrée scolaire"; StartCoroutine(ApplyMarketEvent(2.5f, duration)); break;
             case 2:
                 name = "Feu de forêt"; duration = 0f;
                 GameManager.Instance.DamageForest(30000);
                 break;
-            case 3: name = "Crise économique";         StartCoroutine(ApplyMarketEvent(0.5f, duration)); break;
+            case 3: name = "Crise économique"; StartCoroutine(ApplyMarketEvent(0.5f, duration)); break;
             case 4: name = "Scandale environnemental"; StartCoroutine(ApplyMarketEvent(0.6f, duration)); break;
-            case 5: name = "Compétiteur en faillite";  StartCoroutine(ApplyMarketEvent(1.8f, duration)); break;
+            case 5: name = "Compétiteur en faillite"; StartCoroutine(ApplyMarketEvent(1.8f, duration)); break;
         }
 
-        ShowNotification(duration > 0f ? name + " (" + duration + "s)" : name);
+        string msg = duration > 0f ? name + " (" + duration + "s)" : name;
+        GameManager.Instance.ShowNotification("ÉVÉNEMENT : " + msg);
+        SalesLog.Instance?.AddEntry(">>> " + msg);
     }
 
     private IEnumerator ApplyMarketEvent(float multiplier, float duration)
@@ -163,25 +188,10 @@ public class MarketManager : MonoBehaviour
         _marketEventMultiplier = 1f;
     }
 
-    private void ShowNotification(string message)
-    {
-        if (_txtEventNotification == null) return;
-        StopCoroutine("ClearNotification");
-        _txtEventNotification.text = "ÉVÉNEMENT : " + message;
-        StartCoroutine(ClearNotification(5f));
-    }
-
-    private IEnumerator ClearNotification(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        if (_txtEventNotification) _txtEventNotification.text = "";
-    }
-
     // ── UI ───────────────────────────────────
-
     private void UpdateUI()
     {
-        if (_txtSellPrice)     _txtSellPrice.text     = ""    + _sellPrice.ToString("F2") + " $";
+        if (_txtSellPrice) _txtSellPrice.text = _sellPrice.ToString("F2") + "$";
         if (_txtDemandPercent) _txtDemandPercent.text = "Demande : " + GetDemandPercent().ToString("F0") + "%";
     }
 }

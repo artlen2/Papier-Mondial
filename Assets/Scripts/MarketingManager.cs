@@ -47,7 +47,7 @@ public class MarketingManager : MonoBehaviour
         if (!GameManager.Instance.SpendMoney(cost)) return;
 
         MarketingLevel = nextLevel;
-        Debug.Log("Marketing niv." + MarketingLevel + " — demande bonus : +" + GetDemandBonus() + "%");
+        GameManager.Instance.ShowNotification("Marketing niv." + MarketingLevel + " — demande bonus : +" + GetDemandBonus() + "%");
     }
 
     // ── Formule exponentielle ─────────────────
