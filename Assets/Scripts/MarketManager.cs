@@ -16,6 +16,7 @@ public class MarketManager : MonoBehaviour
     [SerializeField] private float _minPrice = 0.01f;
     [SerializeField] private float _maxPrice = 10f;
     [SerializeField] private float _priceStep = 0.01f;
+    [SerializeField] float exposant = 0.6f;
     public float SellPrice => _sellPrice;
 
     // ── Timers ────────────────────────────────
@@ -40,7 +41,21 @@ public class MarketManager : MonoBehaviour
     [Header("UI — Marché")]
     [SerializeField] private TMP_Text _txtSellPrice;
     [SerializeField] private TMP_Text _txtDemandPercent;
-    [SerializeField] float exposant = 0.6f;
+
+    [Header("Petits événements")]
+    [SerializeField] private float _flavorEventInterval = 30f;
+    private float _flavorTimer = 0f;
+
+    private string[] _flavorEvents = {
+    "Un élève a mangé sa feuille de exam.",
+    "Un prof a commandé 3 ramettes pour rien.",
+    "Quelqu'un a imprimé un chat en ASCII.",
+    "La photocopieuse du 2e étage est encore brisée.",
+    "Un élève utilise du papier comme avion.",
+    "Le directeur imprime ses emails.",
+    "Une feuille s'est envolée par la fenêtre.",
+    "Un prof a perdu ses corrections... encore.",
+};
 
     // ─────────────────────────────────────────
     private void Awake()
@@ -53,6 +68,17 @@ public class MarketManager : MonoBehaviour
     {
         if (GameManager.Instance == null) return;
         if (GameManager.Instance.CurrentGamestate != GameManager.Gamestate.STARTED) return;
+
+        _flavorTimer += Time.deltaTime;
+        if (_flavorTimer >= _flavorEventInterval)
+        {
+            _flavorTimer = 0f;
+            if (!GameManager.Instance.IsNotificationActive)
+            {
+                string msg = _flavorEvents[Random.Range(0, _flavorEvents.Length)];
+                GameManager.Instance.ShowNotification(msg, 5f);
+            }
+        }
 
         HandleAutoSell();
         HandleEventThresholds();
@@ -89,7 +115,7 @@ public class MarketManager : MonoBehaviour
         }
 
         float demand = GetDemandPercent();
-        float interval = Mathf.Lerp(3f, 0.1f, demand / 150f);
+        float interval = Mathf.Lerp(1f, 0.01f, demand / 150f);
 
         _sellTimer += Time.deltaTime;
         _logTimer += Time.deltaTime;
@@ -100,12 +126,16 @@ public class MarketManager : MonoBehaviour
             _sellTimer = 0f;
 
             // demande% = probabilité qu'une feuille soit vendue ce tick
-            if (Random.value <= demand / 100f && GameManager.Instance.TotalPaper > 0)
+            int toSell = Mathf.FloorToInt(demand / 20f); // à 100% = 10 feuilles par tick
+            toSell = Mathf.Min(toSell, GameManager.Instance.TotalPaper);
+
+            if (Random.value <= demand / 100f && toSell > 0)
             {
-                GameManager.Instance.RemovePaper(1);
-                GameManager.Instance.AddMoney(_sellPrice);
-                _pendingSales++;
-                _pendingEarned += _sellPrice;
+                float earned = toSell * _sellPrice;
+                GameManager.Instance.RemovePaper(toSell);
+                GameManager.Instance.AddMoney(earned);
+                _pendingSales += toSell;
+                _pendingEarned += earned;
             }
         }
 
@@ -161,24 +191,57 @@ public class MarketManager : MonoBehaviour
     {
         int roll = Random.Range(0, 6);
         string name = "";
-        float duration = 15f;
+        float duration = 0f;
 
         switch (roll)
         {
-            case 0: name = "Grève des enseignants"; StartCoroutine(ApplyMarketEvent(0.3f, duration)); break;
-            case 1: name = "Rentrée scolaire"; StartCoroutine(ApplyMarketEvent(2.5f, duration)); break;
+            case 0:
+                name = "Grève des enseignants";
+                duration = 60f;
+                StartCoroutine(ApplyMarketEvent(0.3f, duration));
+                break;
+            case 1:
+                name = "Rentrée scolaire";
+                duration = 90f;
+                StartCoroutine(ApplyMarketEvent(2.5f, duration));
+                break;
             case 2:
-                name = "Feu de forêt"; duration = 0f;
+                name = "Feu de forêt";
                 GameManager.Instance.DamageForest(30000);
                 break;
-            case 3: name = "Crise économique"; StartCoroutine(ApplyMarketEvent(0.5f, duration)); break;
-            case 4: name = "Scandale environnemental"; StartCoroutine(ApplyMarketEvent(0.6f, duration)); break;
-            case 5: name = "Compétiteur en faillite"; StartCoroutine(ApplyMarketEvent(1.8f, duration)); break;
+            case 3:
+                name = "Crise économique";
+                duration = 300f; // 5 mins
+                StartCoroutine(ApplyMarketEvent(0.5f, duration));
+                break;
+            case 4:
+                name = "Scandale environnemental";
+                duration = 90f;
+                StartCoroutine(ApplyMarketEvent(0.6f, duration));
+                break;
+            case 5:
+                name = "Compétiteur en faillite";
+                duration = 60f;
+                StartCoroutine(ApplyMarketEvent(1.8f, duration));
+                break;
         }
 
-        string msg = duration > 0f ? name + " (" + duration + "s)" : name;
-        GameManager.Instance.ShowNotification("ÉVÉNEMENT : " + msg);
+        string msg = duration > 0f
+            ? name + " (" + Mathf.FloorToInt(duration / 60f) + "m" + (duration % 60f > 0f ? (duration % 60f) + "s" : "") + ")"
+            : name;
+
+        GameManager.Instance.ShowPersistentNotification("ÉVÉNEMENT : " + msg);
         SalesLog.Instance?.AddEntry(">>> " + msg);
+
+        // Efface la notification quand l'événement se termine
+        if (duration > 0f)
+            StartCoroutine(ClearEventNotification(duration));
+    }
+
+    private IEnumerator ClearEventNotification(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        GameManager.Instance.ShowNotification("Événement terminé.", 3f);
     }
 
     private IEnumerator ApplyMarketEvent(float multiplier, float duration)

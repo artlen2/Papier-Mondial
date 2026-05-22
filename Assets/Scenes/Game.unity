@@ -4213,6 +4213,10 @@ MonoBehaviour:
   _txtMoney: {fileID: 1939021409}
   _txtForestRemaining: {fileID: 166657958}
   _txtNotification: {fileID: 440041316}
+  _colorNormal: {r: 1, g: 1, b: 1, a: 1}
+  _colorImportant: {r: 1, g: 0.6, b: 0.1, a: 1}
+  _normalFontSize: 18
+  _importantFontSize: 24
   _winScreen: {fileID: 0}
   _gameoverScreen: {fileID: 0}
   _txtFinalScore: {fileID: 0}
@@ -5372,7 +5376,8 @@ MonoBehaviour:
   _minPrice: 0.01
   _maxPrice: 5
   _priceStep: 0.01
-  _logInterval: 1
+  exposant: 0.3
+  _logInterval: 0.01
   _eventThresholds:
   - 100
   - 300
@@ -5380,7 +5385,7 @@ MonoBehaviour:
   - 1500
   _txtSellPrice: {fileID: 64317171}
   _txtDemandPercent: {fileID: 508531075}
-  exposant: 0.3
+  _flavorEventInterval: 30
 --- !u!1 &1205697739
 GameObject:
   m_ObjectHideFlags: 0
@@ -7950,7 +7955,7 @@ MonoBehaviour:
   _p: 1.5
   _c: 0.5
   _b: 15
-  _demandBonusPerLevel: 5
+  _demandBonusPerLevel: 15
   _txtMarketingLevel: {fileID: 791300382}
   _txtUpgradeCost: {fileID: 602865690}
   _txtDemandBonus: {fileID: 955085572}
@@ -9397,7 +9402,7 @@ MonoBehaviour:
   _scrollRect: {fileID: 2116665866}
   _content: {fileID: 1214345474}
   _logEntryPrefab: {fileID: 6814065096973973346, guid: 7648248b83692104d97af0429a7ed3e2, type: 3}
-  _maxEntries: 14
+  _maxEntries: 10
 --- !u!114 &2116665866
 MonoBehaviour:
   m_ObjectHideFlags: 0

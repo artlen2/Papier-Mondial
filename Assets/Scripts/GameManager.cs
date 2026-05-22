@@ -44,11 +44,16 @@ public class GameManager : MonoBehaviour
 
     [Header("UI — Notification")]
     [SerializeField] private TMP_Text _txtNotification;
+    [SerializeField] private Color _colorNormal = Color.white;
+    [SerializeField] private Color _colorImportant = new Color(1f, 0.6f, 0.1f); // orange
+    [SerializeField] private float _normalFontSize = 18f;
+    [SerializeField] private float _importantFontSize = 24f;
 
     [Header("UI — Fin de partie")]
     [SerializeField] private GameObject _winScreen;
     [SerializeField] private GameObject _gameoverScreen;
     [SerializeField] private TMP_Text   _txtFinalScore;
+    private bool _isNotificationActive = false;
 
     // ─────────────────────────────────────────
     private void Awake()
@@ -153,19 +158,37 @@ public class GameManager : MonoBehaviour
     // ── Notification centrale ─────────────────
 
 
-    public void ShowNotification(string message)
+    // Notification temporaire normale — petits événements sans impact
+    public void ShowNotification(string message, float duration = 4f)
     {
         if (_txtNotification == null) return;
+        _isNotificationActive = true;
         _txtNotification.text = message;
+        _txtNotification.color = _colorNormal;
+        _txtNotification.fontSize = _normalFontSize;
         StopCoroutine("ClearNotification");
-        StartCoroutine(ClearNotification(4f));
+        StartCoroutine(ClearNotification(duration));
+    }
+
+    // Notification persistante importante — événements qui impactent le jeu
+    public void ShowPersistentNotification(string message)
+    {
+        if (_txtNotification == null) return;
+        StopCoroutine("ClearNotification");
+        _isNotificationActive = true;
+        _txtNotification.text = message;
+        _txtNotification.color = _colorImportant;
+        _txtNotification.fontSize = _importantFontSize;
     }
 
     private IEnumerator ClearNotification(float delay)
     {
         yield return new WaitForSeconds(delay);
         if (_txtNotification) _txtNotification.text = "";
+        _isNotificationActive = false;
     }
+
+    public bool IsNotificationActive => _isNotificationActive;
 
     // ── UI ───────────────────────────────────
 
